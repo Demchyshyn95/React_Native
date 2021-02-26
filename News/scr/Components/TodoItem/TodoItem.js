@@ -6,7 +6,9 @@ export const w = Math.round(Dimensions.get('window').width);
 
 
 const TodoItem = ({data: {item: {title, created, author, body}}}) => {
-    const newBody = body.replace('<p>', '').replace('</p>', '');
+    const newBody = body.replace(/<[^>]+>/g, '');
+    const newTitle = title.replace('<p>', '').replace('</p>', '');
+    const newAuthor = author.replace(/<[^>]+>/g, '');
     const {signEl,text,h2,line,data, tinyLogo} = styles;
     return (
         <View style={signEl}>
@@ -17,14 +19,14 @@ const TodoItem = ({data: {item: {title, created, author, body}}}) => {
                     }}
                 />
             <View style={text}>
-                <Text style={h2}>{title}</Text>
+                <Text style={h2}>{newTitle}</Text>
                 <Text>{newBody}</Text>
-                <Text>{author}</Text>
+                <Text>{newAuthor}</Text>
             </View>
             <View style={data}>
                 <Text>{created}</Text>
             </View>
-            <Text style={line}>─────────────────────────────────────────</Text>
+            <Text style={line}>───────────────────────────────────────</Text>
 
         </View>
     )

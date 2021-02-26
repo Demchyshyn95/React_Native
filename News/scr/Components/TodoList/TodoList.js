@@ -1,42 +1,60 @@
 import React, {useEffect, useState} from 'react';
-import {View, Text,ScrollView, StyleSheet, FlatList, TouchableOpacity, Dimensions} from 'react-native';
+import {View, Text, ScrollView, StyleSheet, FlatList, TouchableOpacity, Dimensions} from 'react-native';
+
 import {newsService} from "../../Service";
 import TodoItem from "../TodoItem/TodoItem";
 
 
-
 const TodoList = () => {
 
-    const [news, setNews] = useState(null);
-    const [page, setPage] = useState(null);
-    const [pageCount, setPageCount] = useState(null);
+    const [news, setNews] = useState([]);
+    const [newPage, setNewPage] = useState(1);
+    const [refreshing, setRefreshing] = useState(false);
+    const [newPageCount, setNewPageCount] = useState(20);
+
+    const { main } = styles;
+
 
     const getNews = async () => {
-        const {articles, pagesCount, page} = await new newsService().getNews(1, 21);
-        setNews(articles);
-        setPage(page);
-        setPageCount(pagesCount);
+        const { articles, pagesCount, page } = await new newsService().getNews(newPage, newPageCount);
+
+        setNews(prevState => [ ...prevState, ...articles]);
+        setNewPage(page+1);
+        setRefreshing(false);
     }
 
     useEffect(() => {
         getNews();
     }, []);
 
+
     const renderItem = (data) => {
         return (
             <View>
-                <TodoItem data={data}/>
+                <TodoItem data={ data }/>
             </View>
         );
     };
-   const {main,btn,text} = styles;
+
+    const LoadMore = () => {
+      getNews();
+    }
+    const Refresh = async () => {
+        const { articles } = await new newsService().getNews();
+        setNews(articles);
+    }
+
     return (
-            <FlatList
-                contentContainerStyle={main}
-                data={news}
-                renderItem={renderItem}
-                keyExtractor={(news)=> news._id}
-            />
+        <FlatList
+            contentContainerStyle={ main }
+            data={ news }
+            renderItem={ renderItem }
+            keyExtractor={(el) => el._id + Math.random().toFixed(2)}
+            onEndReached={ LoadMore }
+            onEndReachedThreshold={ 0.5 }
+            onRefresh={ Refresh }
+            refreshing={ refreshing }
+        />
     )
 };
 
