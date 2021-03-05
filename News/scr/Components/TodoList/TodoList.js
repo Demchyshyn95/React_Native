@@ -1,60 +1,79 @@
 import React, {useEffect, useState} from 'react';
-import {View, Text, ScrollView, StyleSheet, FlatList, TouchableOpacity, Dimensions} from 'react-native';
+import {View,StyleSheet, FlatList} from 'react-native';
 
-import {newsService} from "../../Service";
 import TodoItem from "../TodoItem/TodoItem";
+import Loading from "../Loading/Loading";
+
+
+const useFetch = (page = 1, pageSize = 20) => {
+    const [response, setResponse] = useState([]);
+    const [newPage, setNewPage] = useState(null);
+    const [error, setError] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                setIsLoading(true);
+                const url = `http://api.blog.testing.singree.com/?page=${page}&limit=${pageSize}`;
+
+                const res = await fetch(url);
+                const {articles, page} = await res.json();
+                setResponse(prevState => [...prevState, ...articles]);
+                setNewPage(page);
+                setIsLoading(false)
+            } catch (e) {
+                setError(e);
+            }
+        };
+        fetchData();
+    }, []);
+    return {response, error, isLoading,newPage};
+};
 
 
 const TodoList = () => {
-
-    const [news, setNews] = useState([]);
-    const [newPage, setNewPage] = useState(1);
     const [refreshing, setRefreshing] = useState(false);
-    const [newPageCount, setNewPageCount] = useState(20);
+    const {main} = styles;
 
-    const { main } = styles;
-
-
-    const getNews = async () => {
-        const { articles, pagesCount, page } = await new newsService().getNews(newPage, newPageCount);
-
-        setNews(prevState => [ ...prevState, ...articles]);
-        setNewPage(page+1);
-        setRefreshing(false);
-    }
-
-    useEffect(() => {
-        getNews();
-    }, []);
-
+    const {response , isLoading ,newPage, error,} = useFetch();
+    console.log(response);
 
     const renderItem = (data) => {
         return (
             <View>
-                <TodoItem data={ data }/>
+                <TodoItem data={data}/>
             </View>
         );
     };
 
     const LoadMore = () => {
-      getNews();
+        const newPage = newPage + 1;
+        useFetch();
     }
-    const Refresh = async () => {
-        const { articles } = await new newsService().getNews();
-        setNews(articles);
+
+    const Refresh =  () => {
+        setRefreshing(true);
+        useFetch();
+        setRefreshing(false);
     }
 
     return (
-        <FlatList
-            contentContainerStyle={ main }
-            data={ news }
-            renderItem={ renderItem }
-            keyExtractor={(el) => el._id + Math.random().toFixed(2)}
-            onEndReached={ LoadMore }
-            onEndReachedThreshold={ 0.5 }
-            onRefresh={ Refresh }
-            refreshing={ refreshing }
-        />
+        <View>
+            {
+                isLoading
+                    ? <Loading/>
+                    : <FlatList
+                        contentContainerStyle={main}
+                        data={response}
+                        renderItem={renderItem}
+                        keyExtractor={(el) => el._id + Math.random().toFixed(2)}
+                        onEndReached={LoadMore}
+                        onEndReachedThreshold={0.5}
+                        onRefresh={Refresh}
+                        refreshing={refreshing}
+                    />
+            }
+        </View>
     )
 };
 
